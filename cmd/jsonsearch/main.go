@@ -37,7 +37,7 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	if strings.TrimSpace(dbname) == "" || strings.TrimSpace(keyPath) == "" || strings.TrimSpace(value) == "" {
+	if strings.TrimSpace(dbname) == "" || strings.TrimSpace(keyPath) == "" {
 		fmt.Println("Missing required argument(s): -keypath / -searchvalue")
 		flag.PrintDefaults()
 		os.Exit(1)
