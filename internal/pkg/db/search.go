@@ -183,34 +183,6 @@ func find(key string, root interface{}) (bool, interface{}) {
 	return false, nil
 }
 
-// Check if the list contains values that are of basic data types. If
-// so compare the value sent as arg with the basic values. If they are
-// equal return true else return false.
-func valueInList(value string, l []interface{}) bool {
-	if l == nil || len(l) == 0 {
-		return false
-	}
-	for _, v := range l {
-		switch vv := v.(type) {
-		case string:
-			if vv == value {
-				return true
-			}
-		case int:
-			sval := strconv.Itoa(vv)
-			if sval == value {
-				return true
-			}
-		case float64:
-			sval := strconv.Itoa(int(vv))
-			if sval == value {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // Perform a search on the entire JSON object and look for the key with the
 // corresponding value. The search is not indexed. If the key and value
 // match one or more results are returned in IndexBackend.resultSet. If
