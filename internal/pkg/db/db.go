@@ -57,19 +57,20 @@ func (jdb *JsonDB) Search(dbname, key, value string) ([]interface{}, error) {
 	isIndexed, err := jdb.isIndexed(dbname, key)
 	if isIndexed == true {
 		result, err := jdb.searchIndex(dbname, key, value)
-		if err != nil {
+		if err == nil {
+			results = append(results, result)
+			return results, nil
+		}
+		if err != ErrKeyNotFound || err != ErrKeyValueNotFound {
 			return nil, err
 		}
-		results = append(results, result)
-		return results, nil
+		// Fall through to full search if not found in the index
+		log.Println("Data not found in the index falling through to full search")
 	}
 
-	indexBackend, err := jdb.kvquery(dbname, key, value, true, false)
+	indexBackend, err := jdb.search(dbname, key, value)
 	if err != nil {
 		return nil, err
-	}
-	if len(indexBackend.resultSet) == 0 {
-		return nil, ErrKeyValueNotFound
 	}
 	return indexBackend.resultSet, nil
 }

@@ -2,10 +2,8 @@ package db
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"strconv"
-	"strings"
 )
 
 type JsonType uint8
@@ -33,64 +31,138 @@ type KeyIndex map[string]*IndexBackend
 // DBIndex is a mapping of database name it's indexes
 type DBIndex map[string]KeyIndex
 
-func (jdb *JsonDB) Index(dbname, keyname string, recursive bool) error {
+func (jdb *JsonDB) BuildIndex(dbname, keyname string, recursive bool) error {
 
 	if jdb == nil || jdb.dbMap == nil || len(jdb.dbMap) == 0 {
 		return errors.New("nil/empty json db")
 	}
 
-	if recursive == true {
-		result, err := jdb.kquery(dbname, keyname)
-		if err != nil {
-			log.Printf("Error cannot recursive index on database %v key %v", dbname, keyname)
-			return err
-		}
-		keyIndex := make(KeyIndex)
-		keyIndex[keyname] = result
-		jdb.dbIndex[dbname] = keyIndex
-		return nil
-	}
-
-	result, err := jdb.skimmedQuery(dbname, keyname)
+	result, err := jdb.createIndex(dbname, keyname)
 	if err != nil {
-		log.Printf("Error cannot index on database %v key %v", dbname, keyname)
-		return fmt.Errorf("cannot index on db %s key %s", dbname, keyname)
+		log.Printf("Error cannot recursive index on database %v key %v", dbname, keyname)
+		return err
 	}
-	jdb.dbIndex[dbname] = make(KeyIndex)
-	return doIndex(result, keyname, jdb.dbIndex[dbname])
+	keyIndex := make(KeyIndex)
+	keyIndex[keyname] = result
+	jdb.dbIndex[dbname] = keyIndex
+	return nil
 }
 
-func doIndex(result []map[string]interface{}, key string, keyIndex KeyIndex) error {
+// Create a map index with the key's value for quick access.
+// The function returns a IndexBackend with stringIndex if
+// the value is of basic indexable type. If the type is
+// of complex type (array / map) an error is returned.
+//
+func (jdb *JsonDB) createIndex(dbname, key string) (*IndexBackend, error) {
 
-	var strval string
+	var result IndexBackend
+	var val interface{}
+	var found bool
 
-	if len(result) == 0 {
-		return errors.New("empty result set")
+	jsonType, ok := jdb.dbMap[dbname]
+	if !ok {
+		return nil, ErrInvalidDatabase
 	}
-	if strings.TrimSpace(key) == "" {
-		return errors.New("cannot index on an empty key name")
-	}
-	indexBackend := &IndexBackend{
-		stringIndex: make(map[string]interface{}),
-	}
-	keyIndex[key] = indexBackend
-	for _, r := range result {
-		// query already returned the values for the key. All the values in
-		// result have key present
-		val := r[key]
-		switch x := val.(type) {
+
+	result.stringIndex = make(map[string]interface{})
+	toResult := func(valueFound interface{}, enclObj interface{}) bool {
+		switch indexVal := valueFound.(type) {
 		case int:
-			strval = strconv.Itoa(x)
+			sval := strconv.Itoa(indexVal)
+			result.stringIndex[sval] = enclObj
+			return true
 		case float64:
-			i := int(x)
-			strval = strconv.Itoa(i)
+			sval := strconv.Itoa(int(indexVal))
+			result.stringIndex[sval] = enclObj
+			return true
 		case string:
-			strval = x
-		default:
-			log.Println("Found unexpected data type (Supported types: int, string). Skipping indexing")
-			continue
+			result.stringIndex[indexVal] = enclObj
+			return true
 		}
-		keyIndex[key].stringIndex[strval] = r
+		return false
 	}
-	return nil
+
+	if jsonType.list != nil {
+		for _, lobj := range jsonType.list {
+			if found, val = find(key, lobj); found {
+				saved := toResult(val, lobj)
+				if !saved {
+					return nil, ErrUnsupportedIndexType
+				}
+			}
+		}
+		if len(result.stringIndex) == 0 {
+			return nil, ErrKeyNotFound
+		}
+		return &result, nil
+	}
+
+	if jsonType.dict != nil {
+		v, ok := jsonType.dict[key]
+		if ok {
+			saved := toResult(v, jsonType.dict)
+			if !saved {
+				return nil, ErrUnsupportedIndexType
+			}
+			if len(result.stringIndex) == 0 {
+				return nil, ErrKeyNotFound
+			}
+			return &result, nil
+		}
+
+		for _, v := range jsonType.dict {
+			switch mobj := v.(type) {
+			case []interface{}:
+				found, val = find(key, mobj)
+				if found == true {
+					saved := toResult(val, mobj)
+					if !saved {
+						return nil, ErrUnsupportedIndexType
+					}
+				}
+			case map[string]interface{}:
+				found, val = find(key, mobj)
+				if found == true {
+					saved := toResult(val, mobj)
+					if !saved {
+						return nil, ErrUnsupportedIndexType
+					}
+				}
+			}
+		}
+		if len(result.stringIndex) == 0 {
+			return nil, ErrKeyNotFound
+		}
+		return &result, nil
+	}
+	return nil, ErrKeyNotFound
+}
+
+func (jdb *JsonDB) getIndex(dbname, key string) (*IndexBackend, error) {
+
+	if jdb == nil || jdb.dbMap == nil || len(jdb.dbMap) == 0 {
+		return nil, ErrUninitializedDB
+	}
+	// index wasn't created
+	if jdb.dbIndex == nil || len(jdb.dbIndex) == 0 {
+		return nil, ErrIndexNotFound
+	}
+	// database with dbname isn't indexed
+	keyIndex, ok := jdb.dbIndex[dbname]
+	if !ok {
+		return nil, ErrInvalidDatabase
+	}
+	// key not indexed
+	indexBackend, ok := keyIndex[key]
+	if !ok {
+		return nil, ErrIndexNotFound
+	}
+	return indexBackend, nil
+}
+
+func (jdb *JsonDB) isIndexed(dbname, key string) (bool, error) {
+	if _, err := jdb.getIndex(dbname, key); err != nil {
+		return false, err
+	}
+	return true, nil
 }

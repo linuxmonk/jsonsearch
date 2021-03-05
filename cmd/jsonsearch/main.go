@@ -51,7 +51,7 @@ func main() {
 		li := strings.LastIndex(key, ".")
 		dbname := key[0:li]
 		jsonkey := key[li+1:]
-		err = jsonDb.Index(dbname, jsonkey, true)
+		err = jsonDb.BuildIndex(dbname, jsonkey, true)
 		if err != nil {
 			log.Println("Indexing has failed. This will make searches slow")
 		}
