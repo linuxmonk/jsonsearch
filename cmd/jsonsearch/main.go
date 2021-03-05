@@ -49,6 +49,11 @@ func main() {
 	}
 	for _, key := range indexKeys {
 		li := strings.LastIndex(key, ".")
+		if li == -1 {
+			fmt.Println("Invalid format -indexby")
+			flag.PrintDefaults()
+			os.Exit(1)
+		}
 		dbname := key[0:li]
 		jsonkey := key[li+1:]
 		err = jsonDb.BuildIndex(dbname, jsonkey, true)
