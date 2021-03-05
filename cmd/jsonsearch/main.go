@@ -45,37 +45,4 @@ func main() {
 			log.Println("Indexing has failed. This will make searches slow")
 		}
 	}
-	results, err := jsonDb.Search("organizations", "_id", "103")
-	if err != nil {
-		fmt.Println(err)
-	}
-	PrintResults(results)
-}
-
-func PrintResults(results []interface{}) {
-	if len(results) == 0 {
-		fmt.Println("Empty results")
-	}
-	for i, r := range results {
-		dict, ok := r.(map[string]interface{})
-		if !ok {
-			fmt.Printf("Unrecognized format for result at index %d\n", i)
-		}
-		for k, v := range dict {
-			switch val := v.(type) {
-			case float64:
-				fmt.Printf("%s: %v\n", k, val)
-			case int:
-				fmt.Printf("%s: %v\n", k, val)
-			case bool:
-				fmt.Printf("%s: %v\n", k, val)
-			case string:
-				fmt.Printf("%s: %s\n", k, val)
-			case []interface{}:
-				fmt.Printf("%s: %v\n", k, val)
-			default:
-				fmt.Printf("Unknown Type: %T. Key = %s, Val = %v\n", val, k, val)
-			}
-		}
-	}
 }

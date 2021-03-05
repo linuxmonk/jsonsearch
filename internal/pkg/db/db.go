@@ -53,20 +53,25 @@ func Load(filenames []string) (JsonDB, error) {
 
 func (jdb *JsonDB) Search(dbname, key, value string) ([]interface{}, error) {
 
-	results := make([]interface{}, 1)
+	results := make([]interface{}, 0)
 	isIndexed, err := jdb.isIndexed(dbname, key)
-	if err != nil {
-		return nil, err
-	}
 	if isIndexed == true {
 		result, err := jdb.searchIndex(dbname, key, value)
 		if err != nil {
 			return nil, err
 		}
-		results[0] = result
+		results = append(results, result)
 		return results, nil
 	}
-	return nil, errors.New("no implementation")
+
+	indexBackend, err := jdb.kvquery(dbname, key, value, true, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(indexBackend.resultSet) == 0 {
+		return nil, ErrKeyValueNotFound
+	}
+	return indexBackend.resultSet, nil
 }
 
 func loadJson(fname string, reader io.Reader, db DBMap) error {

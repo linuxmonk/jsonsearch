@@ -22,7 +22,10 @@ const (
 
 type IndexBackend struct {
 	stringIndex map[string]interface{}
+	resultSet   []interface{}
 }
+
+type SearchResults []map[string]interface{}
 
 // Index is a mapping of index key name to the real backend index
 type KeyIndex map[string]*IndexBackend
@@ -37,7 +40,7 @@ func (jdb *JsonDB) Index(dbname, keyname string, recursive bool) error {
 	}
 
 	if recursive == true {
-		result, err := jdb.rquery(dbname, keyname)
+		result, err := jdb.kquery(dbname, keyname)
 		if err != nil {
 			log.Printf("Error cannot recursive index on database %v key %v", dbname, keyname)
 			return err
@@ -48,7 +51,7 @@ func (jdb *JsonDB) Index(dbname, keyname string, recursive bool) error {
 		return nil
 	}
 
-	result, err := jdb.query(dbname, keyname)
+	result, err := jdb.skimmedQuery(dbname, keyname)
 	if err != nil {
 		log.Printf("Error cannot index on database %v key %v", dbname, keyname)
 		return fmt.Errorf("cannot index on db %s key %s", dbname, keyname)
