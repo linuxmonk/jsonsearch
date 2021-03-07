@@ -1,18 +1,8 @@
 package db
 
 import (
-	"errors"
 	"log"
 	"strconv"
-)
-
-var (
-	ErrInvalidDatabase      = errors.New("unknown database name")
-	ErrIndexNotFound        = errors.New("index not found")
-	ErrUninitializedDB      = errors.New("uninitialized database")
-	ErrKeyValueNotFound     = errors.New("search key with value not found")
-	ErrKeyNotFound          = errors.New("search key not found")
-	ErrUnsupportedIndexType = errors.New("cannot index on type")
 )
 
 // Recursively check if key and value match in the given
@@ -181,85 +171,4 @@ func find(key string, root interface{}) (bool, interface{}) {
 		return false, nil
 	}
 	return false, nil
-}
-
-// Perform a search on the entire JSON object and look for the key with the
-// corresponding value. The search is not indexed. If the key and value
-// match one or more results are returned in IndexBackend.resultSet. If
-// no values are found then an error is returned.
-//
-func (jdb *JsonDB) search(dbname, key, value string) (*IndexBackend, error) {
-
-	var result IndexBackend
-	var found bool
-
-	jsonType, ok := jdb.dbMap[dbname]
-	if !ok {
-		return nil, ErrInvalidDatabase
-	}
-
-	toResult := func(valueFound string, enclObj interface{}) {
-		result.resultSet = append(result.resultSet, enclObj)
-	}
-
-	result.resultSet = make([]interface{}, 0)
-	if jsonType.list != nil {
-		for _, lobj := range jsonType.list {
-			found, _ = findv(key, value, lobj)
-			if found {
-				toResult(value, lobj)
-			}
-		}
-		if len(result.resultSet) == 0 {
-			return nil, ErrKeyValueNotFound
-		}
-		return &result, nil
-	}
-
-	if jsonType.dict != nil {
-		v, ok := jsonType.dict[key]
-		if ok {
-			saved := true
-			switch indexVal := v.(type) {
-			case int:
-				sval := strconv.Itoa(indexVal)
-				toResult(sval, v)
-			case float64:
-				sval := strconv.Itoa(int(indexVal))
-				toResult(sval, v)
-			case string:
-				toResult(indexVal, v)
-			default:
-				saved = false
-			}
-			if saved {
-				return &result, nil
-			}
-			return nil, ErrKeyValueNotFound
-		}
-		for _, v := range jsonType.dict {
-			found, _ = findv(key, value, v)
-			if found == true {
-				toResult(value, v)
-			}
-		}
-		if len(result.resultSet) == 0 {
-			return nil, ErrKeyValueNotFound
-		}
-		return &result, nil
-	}
-	return nil, ErrKeyValueNotFound
-}
-
-func (jdb *JsonDB) searchIndex(dbname, key, value string) (interface{}, error) {
-
-	index, err := jdb.getIndex(dbname, key)
-	if err != nil {
-		return nil, err
-	}
-	result, ok := index.stringIndex[value]
-	if !ok {
-		return nil, ErrKeyValueNotFound
-	}
-	return result, nil
 }

@@ -1,4 +1,4 @@
-package db
+package jsondb
 
 import (
 	"log"
@@ -47,7 +47,7 @@ func TestIndexDBSuccess(t *testing.T) {
 	}
 	jsonDb, err := Load(files)
 	assert.Equal(t, err, nil)
-	err = jsonDb.BuildIndex("organizations", "_id", true)
+	err = jsonDb.BuildIndex("organizations", "_id")
 	assert.Equal(t, err, nil)
 }
 
@@ -58,7 +58,7 @@ func TestIndexLargeDB(t *testing.T) {
 	jsonDb, err := Load(files)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(jsonDb.dbMap), len(files))
-	err = jsonDb.BuildIndex("24mb", "id", true)
+	err = jsonDb.BuildIndex("24mb", "id")
 	assert.Equal(t, err, nil)
 }
 
@@ -70,7 +70,7 @@ func TestIndexDBFailWrongKey(t *testing.T) {
 	}
 	jsonDb, err := Load(files)
 	assert.Equal(t, err, nil)
-	err = jsonDb.BuildIndex("organizations", "nokey", true)
+	err = jsonDb.BuildIndex("organizations", "nokey")
 	assert.Equal(t, err, ErrKeyNotFound)
 }
 
@@ -80,7 +80,7 @@ func TestLargeDBTest(t *testing.T) {
 	}
 	jsonDb, err := Load(files)
 	assert.Equal(t, err, nil)
-	err = jsonDb.BuildIndex("24mb", "id", true)
+	err = jsonDb.BuildIndex("24mb", "id")
 	assert.Equal(t, err, nil)
 
 	tests := []struct {
@@ -148,7 +148,7 @@ func TestIndexedSearch(t *testing.T) {
 	}
 	jsonDb, err := Load(files)
 	assert.Equal(t, err, nil)
-	err = jsonDb.BuildIndex("organizations", "_id", true)
+	err = jsonDb.BuildIndex("organizations", "_id")
 	assert.Equal(t, err, nil)
 
 	tests := []struct {
@@ -226,8 +226,8 @@ func dbinit() {
 		"./testdata/users.json",
 	}
 	jdb, _ := Load(files)
-	jdb.BuildIndex("organizations", "_id", true)
-	benchJsonDb = &jdb
+	jdb.BuildIndex("organizations", "_id")
+	benchJsonDb = jdb
 	dbInitDone = true
 }
 
@@ -239,8 +239,8 @@ func largeDbInit() {
 		"./testdata/24mb.json",
 	}
 	jdb, _ := Load(files)
-	jdb.BuildIndex("24mb", "id", true)
-	benchlargeDb = &jdb
+	jdb.BuildIndex("24mb", "id")
+	benchlargeDb = jdb
 	largeDbInitDone = true
 }
 

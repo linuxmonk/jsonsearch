@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gusaki/jsonsearch/internal/pkg/db"
+	"github.com/gusaki/jsonsearch/pkg/jsondb"
 )
 
 func main() {
@@ -32,6 +32,7 @@ func main() {
 	flag.StringVar(&dbname, "searchdb", "", "Name of database to search")
 	flag.StringVar(&value, "searchvalue", "", "Search value")
 	flag.Parse()
+
 	if dbfiles == nil || len(dbfiles) == 0 {
 		fmt.Println("Missing required argument: -dbfiles")
 		flag.PrintDefaults()
@@ -42,7 +43,7 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	jsonDb, err := db.Load(dbfiles)
+	jsonDb, err := jsondb.Load(dbfiles)
 	if err != nil {
 		log.Println("Program terminated with an error")
 		os.Exit(1)
@@ -56,7 +57,7 @@ func main() {
 		}
 		dbname := key[0:li]
 		jsonkey := key[li+1:]
-		err = jsonDb.BuildIndex(dbname, jsonkey, true)
+		err = jsonDb.BuildIndex(dbname, jsonkey)
 		if err != nil {
 			log.Println("Indexing has failed. This will make searches slow")
 		}
