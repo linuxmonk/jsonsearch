@@ -134,7 +134,7 @@ func TestLargeDBTest(t *testing.T) {
 	}
 	for _, test := range tests {
 		log.Println("Test: ", test.name)
-		_, err := jsonDb.Search(test.dbname, test.key, test.value)
+		_, err := jsonDb.Search(test.dbname, test.key, test.value, nil)
 		assert.Equal(t, err, test.err)
 	}
 
@@ -202,7 +202,7 @@ func TestIndexedSearch(t *testing.T) {
 	}
 	for _, test := range tests {
 		log.Println("Test: ", test.name)
-		_, err := jsonDb.Search(test.dbname, test.key, test.value)
+		_, err := jsonDb.Search(test.dbname, test.key, test.value, nil)
 		assert.Equal(t, err, test.err)
 	}
 }
@@ -253,7 +253,7 @@ func TestMain(m *testing.M) {
 
 func benchmarkSearch(jsonDb *JsonDB, dbname, key, value string, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		benchResult, _ = jsonDb.Search(dbname, key, value)
+		benchResult, _ = jsonDb.Search(dbname, key, value, nil)
 	}
 }
 

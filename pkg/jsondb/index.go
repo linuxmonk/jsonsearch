@@ -29,6 +29,17 @@ func (jdb *JsonDB) BuildIndex(dbname, keyname string) error {
 		return ErrInvalidDatabase
 	}
 
+	if jdb.dbIndex != nil {
+		// check if the index is already created
+		dbIdx, ok := jdb.dbIndex[dbname]
+		if ok {
+			_, kOk := dbIdx[keyname]
+			if kOk {
+				return nil
+			}
+		}
+	}
+
 	root := jdb.getDB(dbname)
 	if jdb.dbIndex == nil {
 		jdb.dbIndex = make(DBIndex)

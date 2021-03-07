@@ -13,6 +13,7 @@ var (
 	ErrKeyNotFound          = errors.New("search key not found")
 	ErrUnsupportedIndexType = errors.New("cannot index on type")
 	ErrInvalidJson          = errors.New("invalid JSON")
+	ErrInvalidKeyPath       = errors.New("empty keypath")
 )
 
 func LoadJson(reader io.Reader) (interface{}, error) {

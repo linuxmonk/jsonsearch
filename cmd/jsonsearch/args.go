@@ -10,7 +10,7 @@ import (
 
 type DBFiles []string
 type IndexBy []string
-type KeyRelations map[string]string
+type KeyRelations []string
 
 func (f *DBFiles) String() string {
 	return fmt.Sprint(*f)
@@ -69,16 +69,11 @@ func (i *IndexBy) Set(value string) error {
 	return nil
 }
 
-func (kr KeyRelations) String() string {
-	var s string
-	for k, v := range kr {
-		s += fmt.Sprintf("%s: %s ", k, v)
-	}
-	return s
+func (kr *KeyRelations) String() string {
+	return fmt.Sprint(*kr)
 }
 
-func (k KeyRelations) Set(value string) error {
-
+func (k *KeyRelations) Set(value string) error {
 	for n, reln := range strings.Split(value, ",") {
 		tReln := strings.TrimSpace(reln)
 		if tReln == "" {
@@ -88,19 +83,7 @@ func (k KeyRelations) Set(value string) error {
 		if strings.Index(tReln, ":") == -1 {
 			return errors.New("invalid relationship format")
 		}
-		newkeyidx := strings.Index(tReln, ":")
-		newkey := tReln[0:newkeyidx]
-		newval := tReln[newkeyidx+1:]
-		found := false
-		for key := range k {
-			if newkey == key {
-				found = true
-				break
-			}
-		}
-		if !found {
-			k[newkey] = newval
-		}
+		*k = append(*k, reln)
 	}
 	return nil
 }
