@@ -64,4 +64,5 @@ Command line mode:
 Interactive Mode (also requires some initialization parameters)
         jsonsearch -dbfiles /home/u/org.json,/home/u/tickets.json,/home/u/users.json \
         -indexby org._id:tickets.id -relationships org._id:users.org_id \
+	-interactive
 ```
