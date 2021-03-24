@@ -186,6 +186,7 @@ func (jdb *JsonDB) Search(dbname, key, value string, relations []string) ([]inte
 			}
 			results = append(results, r...)
 		}
+		return results, nil
 	}
 
 	// perform full search for everything
